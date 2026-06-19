@@ -53,13 +53,26 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  let dbStatus = 'unknown';
+  let dbError = null;
+  let userCount = 0;
+  try {
+    userCount = await prisma.user.count();
+    dbStatus = 'connected';
+  } catch (error) {
+    dbStatus = 'error';
+    dbError = error.message;
+  }
   res.json({ 
     status: 'ok', 
     timestamp: new Date(),
     databaseUrlConfigured: !!process.env.DATABASE_URL,
     databaseUrlProtocol: process.env.DATABASE_URL ? process.env.DATABASE_URL.split(':')[0] : null,
-    version: '1.0.6'
+    dbStatus,
+    dbError,
+    userCount,
+    version: '1.0.7'
   });
 });
 
