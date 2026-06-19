@@ -58,7 +58,7 @@ app.get('/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date(),
     databaseUrlConfigured: !!process.env.DATABASE_URL,
-    version: '1.0.4'
+    version: '1.0.5'
   });
 });
 
