@@ -6,20 +6,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // Clean existing data
-  await prisma.auditLog.deleteMany({});
-  await prisma.notification.deleteMany({});
-  await prisma.meeting.deleteMany({});
-  await prisma.internProfile.deleteMany({});
-  await prisma.leave.deleteMany({});
-  await prisma.taskComment.deleteMany({});
-  await prisma.taskActivity.deleteMany({});
-  await prisma.task.deleteMany({});
-  await prisma.attendanceSession.deleteMany({});
-  await prisma.attendance.deleteMany({});
-  await prisma.user.deleteMany({});
-  await prisma.department.deleteMany({});
-  await prisma.settings.deleteMany({});
+  // Check if admin user already exists
+  const adminExists = await prisma.user.findFirst({
+    where: { email: 'admin@taskmanager.com' }
+  });
+
+  if (adminExists) {
+    console.log('Database already seeded. Skipping seeder.');
+    return;
+  }
 
   // 1. Create global settings
   await prisma.settings.create({
