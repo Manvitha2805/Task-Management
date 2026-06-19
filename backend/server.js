@@ -72,35 +72,8 @@ app.get('/health', async (req, res) => {
     dbStatus,
     dbError,
     userCount,
-    version: '1.0.8'
+    version: '1.0.9'
   });
-});
-
-import { exec } from 'child_process';
-import util from 'util';
-const execPromise = util.promisify(exec);
-
-app.get('/db-setup', async (req, res) => {
-  try {
-    console.log('Running prisma db push...');
-    const { stdout: pushStdout, stderr: pushStderr } = await execPromise('npx prisma db push --accept-data-loss');
-    
-    console.log('Running seed script...');
-    const { stdout: seedStdout, stderr: seedStderr } = await execPromise('node prisma/seed.js');
-    
-    res.json({
-      status: 'success',
-      push: { stdout: pushStdout, stderr: pushStderr },
-      seed: { stdout: seedStdout, stderr: seedStderr }
-    });
-  } catch (error) {
-    console.error('Db setup error:', error);
-    res.status(500).json({
-      status: 'error',
-      error: error.message,
-      stack: error.stack
-    });
-  }
 });
 
 app.get('/health-db', async (req, res) => {
