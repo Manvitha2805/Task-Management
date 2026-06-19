@@ -1,0 +1,189 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  name             String
+  role             String            // ADMIN, MANAGER, HR, EMPLOYEE, INTERN
+  mfaSecret        String?           // For TOTP MFA
+  mfaEnabled       Boolean           @default(false)
+  departmentId     String?
+  department       Department?       @relation(fields: [departmentId], references: [id])
+  managerId        String?
+  manager          User?             @relation("ManagerToEmployee", fields: [managerId], references: [id])
+  employees        User[]            @relation("ManagerToEmployee")
+  mentorId         String?
+  mentor           User?             @relation("MentorToIntern", fields: [mentorId], references: [id])
+  interns          User[]            @relation("MentorToIntern")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  // Relations
+  attendances      Attendance[]
+  assignedTasks    Task[]            @relation("AssignedTasks")
+  createdTasks     Task[]            @relation("CreatedTasks")
+  comments         TaskComment[]
+  activities       TaskActivity[]
+  leaves           Leave[]
+  leavesApproved   Leave[]           @relation("ApprovedLeaves")
+  internProfile    InternProfile?    @relation("UserInternProfile")
+  meetingsHosted   Meeting[]         @relation("HostMeetings")
+  meetingsGuest    Meeting[]         @relation("GuestMeetings")
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+}
+
+model Attendance {
+  id             String              @id @default(uuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           String              // YYYY-MM-DD format
+  firstLogin     DateTime            @default(now())
+  lastLogout     DateTime?
+  totalDuration  Int                 @default(0) // in seconds
+  sessionCount   Int                 @default(1)
+  status         String              // PRESENT, ABSENT, LEAVE, HALF_DAY, LATE
+  sessions       AttendanceSession[]
+  
+  @@unique([userId, date])
+}
+
+model AttendanceSession {
+  id           String     @id @default(uuid())
+  attendanceId String
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  loginTime    DateTime   @default(now())
+  logoutTime   DateTime?
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  priority    String         // LOW, MEDIUM, HIGH, CRITICAL
+  status      String         // TODO, IN_PROGRESS, IN_REVIEW, COMPLETED, BLOCKED
+  dueDate     DateTime
+  assignedId  String?
+  assignedTo  User?          @relation("AssignedTasks", fields: [assignedId], references: [id])
+  creatorId   String
+  createdBy   User           @relation("CreatedTasks", fields: [creatorId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  comments    TaskComment[]
+  activities  TaskActivity[]
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  comment   String
+  createdAt DateTime @default(now())
+}
+
+model TaskActivity {
+  id           String   @id @default(uuid())
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  activityType String   // CREATE, UPDATE, ASSIGN, COMMENT, STATUS_CHANGE
+  description  String
+  createdAt    DateTime @default(now())
+}
+
+model Leave {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate      String    // YYYY-MM-DD
+  endDate        String    // YYYY-MM-DD
+  type           String    // CASUAL, SICK, PAID, UNPAID, WFH, INTERNSHIP
+  reason         String
+  status         String    // PENDING, APPROVED, REJECTED
+  managerComment String?
+  approvedById   String?
+  approvedBy     User?     @relation("ApprovedLeaves", fields: [approvedById], references: [id])
+  createdAt      DateTime  @default(now())
+}
+
+model InternProfile {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation("UserInternProfile", fields: [userId], references: [id], onDelete: Cascade)
+  mentorId             String?
+  managerId            String?
+  joiningDate          String   // YYYY-MM-DD
+  duration             Int      // duration in months
+  onboardingStatus     String   // PENDING, IN_PROGRESS, COMPLETED
+  onboardingChecklist  String   // JSON string representing completed items
+  offboardingStatus    String   // PENDING, IN_REVIEW, COMPLETED
+  offboardingChecklist String   // JSON string representing completed items
+  joiningLetterUrl     String?  // simulated letter URL
+  completionLetterUrl  String?  // simulated letter URL
+}
+
+model Meeting {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  hostId        String
+  host          User      @relation("HostMeetings", fields: [hostId], references: [id])
+  guestId       String?
+  guest         User?     @relation("GuestMeetings", fields: [guestId], references: [id])
+  guestName     String?   // For external guest booking
+  guestEmail    String?
+  startTime     DateTime
+  endTime       DateTime
+  status        String    // BOOKED, CANCELLED
+  googleEventId String?
+  createdAt     DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // LOGIN, LOGOUT, TASK_EDIT, LEAVE_APPROVE, etc.
+  details   String   // JSON text detail description
+  ipAddress String?
+  timestamp DateTime @default(now())
+}
+
+model Settings {
+  id                 String @id @default("global")
+  workStartTime      String @default("09:00")
+  workEndTime        String @default("18:00")
+  lateGracePeriod    Int    @default(15) // in minutes
+  halfDayThreshold   Int    @default(4)  // in hours
+  holidayCalendar    String @default("[]") // JSON string of holidays
+  leaveRules         String @default("{}") // JSON string of settings
+  departmentList     String @default("[]") // JSON string list
+}

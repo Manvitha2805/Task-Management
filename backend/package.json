@@ -1,0 +1,25 @@
+{
+  "name": "task-manager-backend",
+  "version": "1.0.0",
+  "description": "Task Manager REST API backend",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node prisma/seed.js",
+    "db:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.12.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "prisma": "^5.12.1"
+  }
+}
