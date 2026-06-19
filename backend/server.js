@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { prisma } from './src/utils/db.js';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes.js';
@@ -54,6 +55,15 @@ app.use('/api/reports', reportRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
+});
+
+app.get('/health-db', async (req, res) => {
+  try {
+    const userCount = await prisma.user.count();
+    res.json({ status: 'ok', userCount, message: 'Database connection successful!' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: error.message });
+  }
 });
 
 // Fallback route 404
