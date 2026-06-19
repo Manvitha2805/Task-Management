@@ -19,10 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const cors = require('cors')
 app.use(cors({
-  origin: '*', // In production, replace with specific frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: 'https://Manvitha2805.github.io'
 }));
 app.use(express.json());
 
