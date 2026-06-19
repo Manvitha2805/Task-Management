@@ -54,7 +54,11 @@ app.use('/api/reports', reportRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date(),
+    databaseUrlConfigured: !!process.env.DATABASE_URL
+  });
 });
 
 app.get('/health-db', async (req, res) => {
